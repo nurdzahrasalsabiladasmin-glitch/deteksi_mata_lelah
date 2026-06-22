@@ -1,0 +1,45 @@
+/* Latar belakang aplikasi */
+.stApp {
+    background-color: #FFF5F7;
+}
+
+/* Judul Utama */
+h1 {
+    color: #FF69B4;
+    font-family: 'Comic Sans MS', 'Helvetica Neue', sans-serif;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 2px 2px #FFE4E1;
+}
+
+/* Sub-judul */
+.sub-title {
+    text-align: center;
+    color: #FFB6C1;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+}
+
+/* Kotak Checkbox Kamera */
+.stCheckbox {
+    background-color: #FFFFFF;
+    padding: 1.2rem;
+    border-radius: 15px;
+    border: 2px solid #FFB6C1;
+    box-shadow: 2px 4px 8px rgba(255, 182, 193, 0.2);
+}
+
+/* Mengubah warna teks checkbox */
+.stCheckbox label {
+    color: #FF69B4 !important;
+    font-weight: bold;
+}
+
+/* Garis pembatas pink lembut */
+hr {
+    border: 0;
+    height: 2px;
+    background: #FFD1DC;
+    margin: 2rem 0;
+}
