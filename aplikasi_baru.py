@@ -170,6 +170,9 @@ else:
         st.info("💡 Mode Online siap digunakan. (Instal `pip install av streamlit-webrtc` jika ingin mencoba mode online di laptop).")
 
 # Jika tombol centang belum diaktifkan
+i# Jika tombol centang belum diaktifkan
 if not run_app:
     st.markdown("""
-        <div style='background-color: #FFFFFF; padding: 20px; border-radius: 15px; border: 1px dashed #FFB6C1; color: #6
+    <div style='background-color: #FFFFFF; padding: 20px; border-radius: 15px; border: 1px dashed #000000;'>
+        </div>
+    """) # <-- PASTIKAN ADA PENUTUP INI DI AKHIR BLOK HTML KAMU!
