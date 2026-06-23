@@ -106,9 +106,10 @@ if run_app:
             return av.VideoFrame.from_ndarray(img, format="bgr24")
 
     # Tampilkan perekam video bawaan browser ke halaman web
+   # Tampilkan perekam video bawaan browser ke halaman web (Sudah Diperbaiki)
     webrtc_streamer(
         key="eye-fatigue",
-        mode=WebRtcMode.VIDEORECVONLY,
+        mode=WebRtcMode.SENDRECV,  # <-- BAGIAN INI YANG DIUBAH YA KAK ✨
         rtc_configuration=RTC_CONFIGURATION,
         video_processor_factory=EyeFatigueProcessor,
         media_stream_constraints={"video": True, "audio": False},
