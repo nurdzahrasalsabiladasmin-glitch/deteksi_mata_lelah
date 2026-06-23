@@ -19,7 +19,7 @@ try:
 except FileNotFoundError:
     pass # Mengabaikan jika CSS belum sefolder saat testing
 
-st.markdown("<h1>🌸 AI Eye Fatigue Detector 🌸</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🌸 Deteksi Mata Kelelahan 🌸</h1>", unsafe_allow_html=True)
 st.markdown("<p class='sub-title'>Pantau kesehatan mata indahmu secara real-time dengan asisten AI pribadi</p>", unsafe_allow_html=True)
 
 # --- TOMBOL PILIHAN MODE APLIKASI ---
