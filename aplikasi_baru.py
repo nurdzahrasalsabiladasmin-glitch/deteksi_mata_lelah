@@ -40,7 +40,7 @@ with col1:
 with col2:
     frame_placeholder = st.empty()   
 
-run_app = st.checkbox("✨ AKTIFKAN WEBCAM KAMU DI SINI KK CANTIK & GANTENG ✨")
+run_app = st.checkbox("✨ AKTIFKAN WEBCAM KAMU DI SINI  ✨")
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =====================================================================
