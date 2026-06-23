@@ -49,7 +49,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 
-CONSECUTIVE_FRAMES = 10 
+CONSECUTIVE_FRAMES = 7
 if 'counter' not in st.session_state:
     st.session_state.counter = 0
 
