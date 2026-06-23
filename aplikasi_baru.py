@@ -57,12 +57,7 @@ if 'counter' not in st.session_state:
 CONSECUTIVE_FRAMES = 10 
 
 if run_app:
-    # Konfigurasi server STUN publik agar video lancar di internet
-    RTC_CONFIGURATION = RTCConfiguration(
-        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-    )
-
-    # Kelas pengolah video WebRTC pengganti Loop While OpenCV
+    # Kelas pengolah video WebRTC yang lebih stabil
     class EyeFatigueProcessor:
         def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
             img = frame.to_ndarray(format="bgr24")
@@ -105,12 +100,10 @@ if run_app:
             cv2.putText(img, status_teks, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, warna_teks_kamera, 2)
             return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-    # Tampilkan perekam video bawaan browser ke halaman web
-   # Tampilkan perekam video bawaan browser ke halaman web (Sudah Diperbaiki)
+    # Jalankan streaming dengan konfigurasi default sistem internet browser
     webrtc_streamer(
-        key="eye-fatigue",
-        mode=WebRtcMode.SENDRECV,  # <-- BAGIAN INI YANG DIUBAH YA KAK ✨
-        rtc_configuration=RTC_CONFIGURATION,
+        key="eye-fatigue-live",
+        mode=WebRtcMode.SENDRECV,
         video_processor_factory=EyeFatigueProcessor,
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
