@@ -173,6 +173,6 @@ else:
 if not run_app:
     st.markdown("""
     <div style='background-color: #FFFFFF; padding: 20px; border-radius: 15px; border: 1px dashed #000000; color: #000000;'>
-        <p style='text-align: center;'>Silakan aktifkan tombol centang untuk memulai deteksi mata lelah.</p>
+        <p style='text-align: center;'>Silakan aktifkan tombol centang untuk memulai deteksi mata lelah kk cantik dan ganteng.</p>
     </div>
     """, unsafe_allow_html=True) # <-- Perhatikan penutup """ dan tambahan unsafe_allow_html ini!
