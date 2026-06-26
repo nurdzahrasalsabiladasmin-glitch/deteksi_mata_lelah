@@ -143,6 +143,12 @@ else:
             class EyeFatigueProcessor:
                 def __init__(self):
                     self.local_counter = 0
+                    try:
+                        with open("alarm.mp3", "rb") as f:
+                            self.audio_bytes = f.read()
+                        self.b64_audio = base64.b64encode(self.audio_bytes).decode()
+                    except FileNotFoundError:
+                        self.b64_audio = None
 
                 def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
                     img = frame.to_ndarray(format="bgr24")
@@ -153,7 +159,6 @@ else:
                     
                     status_teks = "Mata Terbuka (Kondisi Normal)"
                     warna_teks_kamera = (255, 105, 180) 
-                    lelah_terdeteksi = False
                     
                     for (x, y, w, h) in wajah_deteksi:
                         cv2.rectangle(img, (x, y), (x+w, y+h), (255, 105, 180), 3)
@@ -164,9 +169,8 @@ else:
                         if len(mata_deteksi) < 2:
                             self.local_counter += 1
                             if self.local_counter >= 7:
-                                status_teks = "PERINGATAN: MATA KAMU LELAH! ISITIRAHAT DULU YUK"
+                                status_teks = "PERINGATAN: MATA KAMU LELAH!"
                                 warna_teks_kamera = (0, 0, 255) 
-                                lelah_terdeteksi = True
                         else:
                             self.local_counter = 0
                             
@@ -174,9 +178,7 @@ else:
                             cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255, 255, 255), 2)
                     
                     cv2.putText(img, status_teks, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, warna_teks_kamera, 2)
-                    
-                    # Mengembalikan frame gambar dan status lelah ke fungsi utama
-                    return av.VideoFrame.from_ndarray(img, format="bgr24"), lelah_terdeteksi
+                    return av.VideoFrame.from_ndarray(img, format="bgr24")
             
             return EyeFatigueProcessor
 
@@ -186,7 +188,7 @@ else:
             processor_terpilih = dapatkan_processor()
             with FRAME_WINDOW:
                 ctx = webrtc_streamer(
-                    key="eye-fatigue-audio-v4",
+                    key="eye-fatigue-audio-v6", 
                     mode=WebRtcMode.SENDRECV,
                     video_processor_factory=processor_terpilih,
                     media_stream_constraints={"video": True, "audio": False},
@@ -194,12 +196,12 @@ else:
                     desired_playing_state=True
                 )
                 
-                # Memeriksa output dari video_processor untuk memicu suara di halaman web utama
+                # 🌟 KUNCI PERBAIKAN: Blok 'if ctx.video_processor' harus berada DI SINI 
+                # (Masih di dalam blok 'if run_app' dan di dalam 'try')
                 if ctx.video_processor:
-                    # Trik membaca variabel dari dalam thread WebRTC untuk memutar audio HTML
                     if hasattr(ctx.video_processor, 'local_counter') and ctx.video_processor.local_counter >= 7:
                         status_placeholder.markdown("<div style='background-color:#FFF5F5; padding:15px; border-left:5px solid #FF0000; border-radius:10px;'><b style='color:#991B1B;'>STATUS:</b> <span style='color:#DC2626;'>⚠️ MATA LELAH</span></div>", unsafe_allow_html=True)
-                        putar_suara_alarm("alarm.mp3") # <--- Bunyi alarm di mode website online
+                        putar_suara_alarm("alarm.mp3") 
                     else:
                         status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>💖 MATA SEGAR & CANTIK</span></div>", unsafe_allow_html=True)
                         
