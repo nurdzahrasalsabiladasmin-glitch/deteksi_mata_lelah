@@ -1,6 +1,7 @@
 import streamlit as st
 import cv2
 import math
+import base64
 
 # =====================================================================
 # 1. KONFIGURASI HALAMAN & PEMANGGILAN CSS EKSTERNAL
@@ -33,6 +34,24 @@ mode_aplikasi = st.radio(
 st.markdown("<hr>", unsafe_allow_html=True)
 
 # =====================================================================
+# FUNGSI GLOBAL: MEMUTAR SUARA VIA HTML5 BASE64
+# =====================================================================
+def putar_suara_alarm(file_audio):
+    try:
+        with open(file_audio, "rb") as f:
+            data_audio = f.read()
+        b64_audio = base64.b64encode(data_audio).decode()
+        # Menyuntikkan tag audio HTML5 yang otomatis menyala tersembunyi
+        html_audio = f"""
+            <audio autoplay style="display:none;">
+                <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
+            </audio>
+        """
+        st.markdown(html_audio, unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+# =====================================================================
 # 2. LAYOUT METRIK INDIKATOR (POSISI DI ATAS TOMBOL)
 # =====================================================================
 col1, col2 = st.columns(2)
@@ -50,7 +69,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 # =====================================================================
 # 3. SETTING CASCADE CLASSIFIER (OPENCV)
 # =====================================================================
-# Menggunakan cache resource agar file xml tidak dimuat ulang terus-menerus
 @st.cache_resource
 def load_cascades():
     face = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -103,6 +121,7 @@ if mode_aplikasi == "💻 Mode Laptop Sendiri (Offline)":
             
             if alert_style == "danger":
                 status_placeholder.markdown("<div style='background-color:#FFF5F5; padding:15px; border-left:5px solid #FF0000; border-radius:10px;'><b style='color:#991B1B;'>STATUS:</b> <span style='color:#DC2626;'>⚠️ MATA LELAH</span></div>", unsafe_allow_html=True)
+                putar_suara_alarm("alarm.mp3") 
             else:
                 status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>💖 MATA SEGAR & CANTIK</span></div>", unsafe_allow_html=True)
                 
@@ -119,7 +138,6 @@ else:
         import av
         from streamlit_webrtc import webrtc_streamer, WebRtcMode
         
-        # Class processor dibungkus fungsi cache agar tidak dibuat ulang tiap detiknya
         @st.cache_resource
         def dapatkan_processor():
             class EyeFatigueProcessor:
@@ -144,7 +162,7 @@ else:
                         
                         if len(mata_deteksi) < 2:
                             self.local_counter += 1
-                            if self.local_counter >= 7: # Menggunakan angka statis agar stabil di thread terpisah
+                            if self.local_counter >= 7: 
                                 status_teks = "PERINGATAN: MATA KAMU LELAH!"
                                 warna_teks_kamera = (0, 0, 255) 
                         else:
@@ -159,18 +177,25 @@ else:
             return EyeFatigueProcessor
 
         if run_app:
-            status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>🌐 Mode Website Aktif</span></div>", unsafe_allow_html=True)
-            
             processor_terpilih = dapatkan_processor()
             with FRAME_WINDOW:
-                webrtc_streamer(
-                    key="eye-fatigue-fixed-prod", # Key unik yang fresh
+                ctx = webrtc_streamer(
+                    key="eye-fatigue-audio-vfinal", 
                     mode=WebRtcMode.SENDRECV,
                     video_processor_factory=processor_terpilih,
                     media_stream_constraints={"video": True, "audio": False},
                     async_processing=True,
                     desired_playing_state=True
                 )
+                
+                # Cek variabel local_counter dari dalam thread WebRTC untuk memicu panggilan audio
+                if ctx.video_processor:
+                    if hasattr(ctx.video_processor, 'local_counter') and ctx.video_processor.local_counter >= 7:
+                        status_placeholder.markdown("<div style='background-color:#FFF5F5; padding:15px; border-left:5px solid #FF0000; border-radius:10px;'><b style='color:#991B1B;'>STATUS:</b> <span style='color:#DC2626;'>⚠️ MATA LELAH</span></div>", unsafe_allow_html=True)
+                        putar_suara_alarm("alarm.mp3") 
+                    else:
+                        status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>💖 MATA SEGAR & CANTIK</span></div>", unsafe_allow_html=True)
+                        
     except ModuleNotFoundError:
         st.info("💡 Mode Online siap digunakan.")
 
