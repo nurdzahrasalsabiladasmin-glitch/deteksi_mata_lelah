@@ -1,8 +1,6 @@
 import streamlit as st
 import cv2
 import math
-import sys
-import os
 
 # =====================================================================
 # 1. KONFIGURASI HALAMAN & PEMANGGILAN CSS EKSTERNAL
@@ -40,11 +38,9 @@ st.markdown("<hr>", unsafe_allow_html=True)
 col1, col2 = st.columns(2)
 with col1:
     status_placeholder = st.empty()  
-    # Membuat container kosong default agar tampilan seimbang
     status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>💖 MATA SEGAR & CANTIK</span></div>", unsafe_allow_html=True)
 
 with col2:
-    # PERBAIKAN: Gunakan col2 langsung sebagai wadah penampilan kamera!
     FRAME_WINDOW = st.empty() 
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -54,10 +50,16 @@ st.markdown("<br>", unsafe_allow_html=True)
 # =====================================================================
 # 3. SETTING CASCADE CLASSIFIER (OPENCV)
 # =====================================================================
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+# Menggunakan cache resource agar file xml tidak dimuat ulang terus-menerus
+@st.cache_resource
+def load_cascades():
+    face = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    eye = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+    return face, eye
 
+face_cascade, eye_cascade = load_cascades()
 CONSECUTIVE_FRAMES = 7
+
 if 'counter' not in st.session_state:
     st.session_state.counter = 0
 
@@ -65,7 +67,6 @@ if 'counter' not in st.session_state:
 # A. JALUR PILIHAN: MODE LAPTOP (OFFLINE)
 # =====================================================================
 if mode_aplikasi == "💻 Mode Laptop Sendiri (Offline)":
-    
     if run_app:
         cap = cv2.VideoCapture(0)
         while cap.isOpened() and run_app:
@@ -102,20 +103,14 @@ if mode_aplikasi == "💻 Mode Laptop Sendiri (Offline)":
             
             if alert_style == "danger":
                 status_placeholder.markdown("<div style='background-color:#FFF5F5; padding:15px; border-left:5px solid #FF0000; border-radius:10px;'><b style='color:#991B1B;'>STATUS:</b> <span style='color:#DC2626;'>⚠️ MATA LELAH</span></div>", unsafe_allow_html=True)
-                try:
-                    import winsound
-                    winsound.Beep(2000, 150)
-                except:
-                    pass
             else:
                 status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>💖 MATA SEGAR & CANTIK</span></div>", unsafe_allow_html=True)
                 
             cv2.putText(frame, status_teks, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, warna_teks_kamera, 2)
             frame_tampil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # PERBAIKAN: Mengisi container FRAME_WINDOW yang ada di dalam col2
             FRAME_WINDOW.image(frame_tampil, use_container_width=True)
         cap.release()
+
 # =====================================================================
 # B. JALUR PILIHAN: MODE WEBSITE (ONLINE - WEBRTC)
 # =====================================================================
@@ -124,9 +119,7 @@ else:
         import av
         from streamlit_webrtc import webrtc_streamer, WebRtcMode
         
-        status_placeholder.markdown("<div style='background-color:#F0F2F6; padding:15px; border-radius:10px; color:#555;'>Menunggu Kamera WebRTC aktif...</div>", unsafe_allow_html=True)
-
-        # 🌟 TRICK: Gunakan Cache agar Class Processor tidak dibuat ulang terus-menerus yang bikin kamera kedap-kedip
+        # Class processor dibungkus fungsi cache agar tidak dibuat ulang tiap detiknya
         @st.cache_resource
         def dapatkan_processor():
             class EyeFatigueProcessor:
@@ -151,7 +144,7 @@ else:
                         
                         if len(mata_deteksi) < 2:
                             self.local_counter += 1
-                            if self.local_counter >= CONSECUTIVE_FRAMES:
+                            if self.local_counter >= 7: # Menggunakan angka statis agar stabil di thread terpisah
                                 status_teks = "PERINGATAN: MATA KAMU LELAH!"
                                 warna_teks_kamera = (0, 0, 255) 
                         else:
@@ -166,23 +159,23 @@ else:
             return EyeFatigueProcessor
 
         if run_app:
-            processor_terpilih = dapatkan_processor()
+            status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>🌐 Mode Website Aktif</span></div>", unsafe_allow_html=True)
             
+            processor_terpilih = dapatkan_processor()
             with FRAME_WINDOW:
                 webrtc_streamer(
-                    key="eye-fatigue-final-v3", # Ganti key agar cache lama di-reset total
+                    key="eye-fatigue-fixed-prod", # Key unik yang fresh
                     mode=WebRtcMode.SENDRECV,
                     video_processor_factory=processor_terpilih,
                     media_stream_constraints={"video": True, "audio": False},
                     async_processing=True,
-                    desired_playing_state=True, # Langsung memaksa menyala otomatis
+                    desired_playing_state=True
                 )
     except ModuleNotFoundError:
-        st.info("💡 Mode Online siap digunakan. (Instal `pip install av streamlit-webrtc` jika ingin mencoba mode online).")
+        st.info("💡 Mode Online siap digunakan.")
 
 # Jika tombol centang belum diaktifkan
 if not run_app:
-    # PERBAIKAN: Jika kamera mati, bersihkan area kotak kamera agar rapi
     FRAME_WINDOW.empty()
     st.markdown("""
     <div style='background-color: #FFFFFF; padding: 20px; border-radius: 15px; border: 1px dashed #FF69B4; color: #000000;'>
