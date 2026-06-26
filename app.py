@@ -116,10 +116,6 @@ if mode_aplikasi == "💻 Mode Laptop Sendiri (Offline)":
             # PERBAIKAN: Mengisi container FRAME_WINDOW yang ada di dalam col2
             FRAME_WINDOW.image(frame_tampil, use_container_width=True)
         cap.release()
-
-# =====================================================================
-# B. JALUR PILIHAN: MODE WEBSITE (ONLINE - WEBRTC)
-# =====================================================================
 # =====================================================================
 # B. JALUR PILIHAN: MODE WEBSITE (ONLINE - WEBRTC)
 # =====================================================================
@@ -172,15 +168,14 @@ else:
         if run_app:
             processor_terpilih = dapatkan_processor()
             
-            with FRAME_WINDOW:
+           with FRAME_WINDOW:
                 webrtc_streamer(
-                    key="eye-fatigue-hybrid-v2", # Ganti key agar Streamlit mereset komponen lama yang bug
+                    key="eye-fatigue-final-v3", # Ganti key agar cache lama di-reset total
                     mode=WebRtcMode.SENDRECV,
                     video_processor_factory=processor_terpilih,
                     media_stream_constraints={"video": True, "audio": False},
                     async_processing=True,
-                    desired_playing_state=True, # Langsung play live otomatis
-                    rtc_configuration={"sdpSemantics": "unified-plan", "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+                    desired_playing_state=True, # Langsung memaksa menyala otomatis
                 )
     except ModuleNotFoundError:
         st.info("💡 Mode Online siap digunakan. (Instal `pip install av streamlit-webrtc` jika ingin mencoba mode online).")
