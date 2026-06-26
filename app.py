@@ -120,6 +120,9 @@ if mode_aplikasi == "💻 Mode Laptop Sendiri (Offline)":
 # =====================================================================
 # B. JALUR PILIHAN: MODE WEBSITE (ONLINE - WEBRTC)
 # =====================================================================
+# =====================================================================
+# B. JALUR PILIHAN: MODE WEBSITE (ONLINE - WEBRTC)
+# =====================================================================
 else:
     try:
         import av
@@ -127,7 +130,9 @@ else:
         
         status_placeholder.markdown("<div style='background-color:#F0F2F6; padding:15px; border-radius:10px; color:#555;'>Menunggu Kamera WebRTC aktif...</div>", unsafe_allow_html=True)
 
-        if run_app:
+        # 🌟 TRICK: Gunakan Cache agar Class Processor tidak dibuat ulang terus-menerus yang bikin kamera kedap-kedip
+        @st.cache_resource
+        def dapatkan_processor():
             class EyeFatigueProcessor:
                 def __init__(self):
                     self.local_counter = 0
@@ -161,19 +166,20 @@ else:
                     
                     cv2.putText(img, status_teks, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, warna_teks_kamera, 2)
                     return av.VideoFrame.from_ndarray(img, format="bgr24")
+            
+            return EyeFatigueProcessor
 
-            # PERBAIKAN: Meletakkan widget WebRTC di dalam komponen FRAME_WINDOW (col2)
-            # PERBAIKAN: Meletakkan widget WebRTC di dalam komponen FRAME_WINDOW (col2)
+        if run_app:
+            processor_terpilih = dapatkan_processor()
+            
             with FRAME_WINDOW:
                 webrtc_streamer(
-                    key="eye-fatigue-hybrid",
+                    key="eye-fatigue-hybrid-v2", # Ganti key agar Streamlit mereset komponen lama yang bug
                     mode=WebRtcMode.SENDRECV,
-                    video_processor_factory=EyeFatigueProcessor,
+                    video_processor_factory=processor_terpilih,
                     media_stream_constraints={"video": True, "audio": False},
                     async_processing=True,
-                    
-                    # 🌟 TAMBAHKAN 2 BARIS INI AGAR MENJADI KAMERA LIVE OTOMATIS:
-                    desired_playing_state=True,  # Otomatis menyala tanpa klik tombol start video
+                    desired_playing_state=True, # Langsung play live otomatis
                     rtc_configuration={"sdpSemantics": "unified-plan", "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
                 )
     except ModuleNotFoundError:
