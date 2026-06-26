@@ -168,7 +168,7 @@ else:
         if run_app:
             processor_terpilih = dapatkan_processor()
             
-           with FRAME_WINDOW:
+            with FRAME_WINDOW:
                 webrtc_streamer(
                     key="eye-fatigue-final-v3", # Ganti key agar cache lama di-reset total
                     mode=WebRtcMode.SENDRECV,
