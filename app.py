@@ -1,6 +1,7 @@
 import streamlit as st
 import cv2
 import math
+import base64
 
 # =====================================================================
 # 1. KONFIGURASI HALAMAN & PEMANGGILAN CSS EKSTERNAL
@@ -33,6 +34,24 @@ mode_aplikasi = st.radio(
 st.markdown("<hr>", unsafe_allow_html=True)
 
 # =====================================================================
+# FUNCTION UNTUK MEMUTAR SUARA DI STREAMLIT (ONLINE & OFFLINE)
+# =====================================================================
+def putar_suara_alarm(file_audio):
+    try:
+        with open(file_audio, "rb") as f:
+            data_audio = f.read()
+        b64_audio = base64.b64encode(data_audio).decode()
+        # Kode HTML5 untuk memutar audio otomatis secara tersembunyi
+        html_audio = f"""
+            <audio autoplay style="display:none;">
+                <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
+            </audio>
+        """
+        st.markdown(html_audio, unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass # Jika file mp3 belum diunggah, aplikasi tidak akan error
+
+# =====================================================================
 # 2. LAYOUT METRIK INDIKATOR (POSISI DI ATAS TOMBOL)
 # =====================================================================
 col1, col2 = st.columns(2)
@@ -50,7 +69,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 # =====================================================================
 # 3. SETTING CASCADE CLASSIFIER (OPENCV)
 # =====================================================================
-# Menggunakan cache resource agar file xml tidak dimuat ulang terus-menerus
 @st.cache_resource
 def load_cascades():
     face = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -103,6 +121,7 @@ if mode_aplikasi == "💻 Mode Laptop Sendiri (Offline)":
             
             if alert_style == "danger":
                 status_placeholder.markdown("<div style='background-color:#FFF5F5; padding:15px; border-left:5px solid #FF0000; border-radius:10px;'><b style='color:#991B1B;'>STATUS:</b> <span style='color:#DC2626;'>⚠️ MATA LELAH</span></div>", unsafe_allow_html=True)
+                putar_suara_alarm("alarm.mp3") # <--- Bunyi alarm di mode offline
             else:
                 status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>💖 MATA SEGAR & CANTIK</span></div>", unsafe_allow_html=True)
                 
@@ -119,7 +138,6 @@ else:
         import av
         from streamlit_webrtc import webrtc_streamer, WebRtcMode
         
-        # Class processor dibungkus fungsi cache agar tidak dibuat ulang tiap detiknya
         @st.cache_resource
         def dapatkan_processor():
             class EyeFatigueProcessor:
@@ -135,6 +153,7 @@ else:
                     
                     status_teks = "Mata Terbuka (Kondisi Normal)"
                     warna_teks_kamera = (255, 105, 180) 
+                    lelah_terdeteksi = False
                     
                     for (x, y, w, h) in wajah_deteksi:
                         cv2.rectangle(img, (x, y), (x+w, y+h), (255, 105, 180), 3)
@@ -144,9 +163,10 @@ else:
                         
                         if len(mata_deteksi) < 2:
                             self.local_counter += 1
-                            if self.local_counter >= 7: # Menggunakan angka statis agar stabil di thread terpisah
-                                status_teks = "PERINGATAN: MATA KAMU LELAH!"
+                            if self.local_counter >= 7:
+                                status_teks = "PERINGATAN: MATA KAMU LELAH! ISITIRAHAT DULU YUK"
                                 warna_teks_kamera = (0, 0, 255) 
+                                lelah_terdeteksi = True
                         else:
                             self.local_counter = 0
                             
@@ -154,7 +174,9 @@ else:
                             cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255, 255, 255), 2)
                     
                     cv2.putText(img, status_teks, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, warna_teks_kamera, 2)
-                    return av.VideoFrame.from_ndarray(img, format="bgr24")
+                    
+                    # Mengembalikan frame gambar dan status lelah ke fungsi utama
+                    return av.VideoFrame.from_ndarray(img, format="bgr24"), lelah_terdeteksi
             
             return EyeFatigueProcessor
 
@@ -163,14 +185,24 @@ else:
             
             processor_terpilih = dapatkan_processor()
             with FRAME_WINDOW:
-                webrtc_streamer(
-                    key="eye-fatigue-fixed-prod", # Key unik yang fresh
+                ctx = webrtc_streamer(
+                    key="eye-fatigue-audio-v4",
                     mode=WebRtcMode.SENDRECV,
                     video_processor_factory=processor_terpilih,
                     media_stream_constraints={"video": True, "audio": False},
                     async_processing=True,
                     desired_playing_state=True
                 )
+                
+                # Memeriksa output dari video_processor untuk memicu suara di halaman web utama
+                if ctx.video_processor:
+                    # Trik membaca variabel dari dalam thread WebRTC untuk memutar audio HTML
+                    if hasattr(ctx.video_processor, 'local_counter') and ctx.video_processor.local_counter >= 7:
+                        status_placeholder.markdown("<div style='background-color:#FFF5F5; padding:15px; border-left:5px solid #FF0000; border-radius:10px;'><b style='color:#991B1B;'>STATUS:</b> <span style='color:#DC2626;'>⚠️ MATA LELAH</span></div>", unsafe_allow_html=True)
+                        putar_suara_alarm("alarm.mp3") # <--- Bunyi alarm di mode website online
+                    else:
+                        status_placeholder.markdown("<div style='background-color:#FFF0F5; padding:15px; border-left:5px solid #FF69B4; border-radius:10px;'><b style='color:#C71585;'>STATUS:</b> <span style='color:#FF1493;'>💖 MATA SEGAR & CANTIK</span></div>", unsafe_allow_html=True)
+                        
     except ModuleNotFoundError:
         st.info("💡 Mode Online siap digunakan.")
 
@@ -179,6 +211,6 @@ if not run_app:
     FRAME_WINDOW.empty()
     st.markdown("""
     <div style='background-color: #FFFFFF; padding: 20px; border-radius: 15px; border: 1px dashed #FF69B4; color: #000000;'>
-        <p style='text-align: center; color: #C71585;'><b>Silakan aktifkan tombol centang untuk memulai deteksi mata lelah kk cantik dan ganteng. ✨</b></p>
+        <p style='text-align: center; color: #C71585;'><b>Silakan aktifkan tombol centang untuk memulai deteksi mata lelah kk cantik. ✨</b></p>
     </div>
     """, unsafe_allow_html=True)
