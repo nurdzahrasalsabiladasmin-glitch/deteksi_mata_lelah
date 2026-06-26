@@ -163,6 +163,7 @@ else:
                     return av.VideoFrame.from_ndarray(img, format="bgr24")
 
             # PERBAIKAN: Meletakkan widget WebRTC di dalam komponen FRAME_WINDOW (col2)
+            # PERBAIKAN: Meletakkan widget WebRTC di dalam komponen FRAME_WINDOW (col2)
             with FRAME_WINDOW:
                 webrtc_streamer(
                     key="eye-fatigue-hybrid",
@@ -170,6 +171,10 @@ else:
                     video_processor_factory=EyeFatigueProcessor,
                     media_stream_constraints={"video": True, "audio": False},
                     async_processing=True,
+                    
+                    # 🌟 TAMBAHKAN 2 BARIS INI AGAR MENJADI KAMERA LIVE OTOMATIS:
+                    desired_playing_state=True,  # Otomatis menyala tanpa klik tombol start video
+                    rtc_configuration={"sdpSemantics": "unified-plan", "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
                 )
     except ModuleNotFoundError:
         st.info("💡 Mode Online siap digunakan. (Instal `pip install av streamlit-webrtc` jika ingin mencoba mode online).")
